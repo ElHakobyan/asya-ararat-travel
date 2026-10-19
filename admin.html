@@ -36,7 +36,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--navy);outline-o
 .tab[aria-selected=true] .n{background:#fff3}
 .review{margin-bottom:14px}
 .row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
-.stars{color:#e5a823;letter-spacing:2px;font-size:18px}
+.stars{color:#e5a823;letter-spacing:2px;font-size:18px}.stars.big{font-size:26px;margin-bottom:4px}
 .meta{color:var(--muted);font-size:13px}
 .text{line-height:1.7;margin:12px 0 16px;white-space:pre-wrap;word-break:break-word}
 .actions{display:flex;flex-wrap:wrap;gap:8px}
@@ -47,7 +47,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--navy);outline-o
 </style>
 </head>
 <body>
-<div class="top"><div class="in"><a href="./">← На сайт</a><strong>Админ-панель отзывов</strong><button class="ghost" id="logout" hidden>Выйти</button></div></div>
+<div class="top"><div class="in"><a href="./">← На сайт</a><strong>Админ-панель оценок</strong><button class="ghost" id="logout" hidden>Выйти</button></div></div>
 <main class="wrap">
 
 <section id="notConfigured" class="card" hidden>
@@ -75,6 +75,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--navy);outline-o
     <button class="tab" role="tab" data-status="hidden">Скрытые<span class="n" id="n-hidden">0</span></button>
     <button class="ghost" id="refresh" style="margin-left:auto">Обновить</button>
   </div>
+  <div id="bulk" class="card" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap" hidden><span id="bulkText"></span><button class="good" id="publishAll">Опубликовать все</button></div>
   <div id="list"></div>
 </section>
 
@@ -150,7 +151,7 @@ async function enterPanel() {
 async function load() {
   say('panelMsg', '');
   const r = await api('/rest/v1/reviews?select=*&order=created_at.desc', {method: 'GET'});
-  if (!r.ok) { say('panelMsg', 'Не удалось загрузить отзывы (код ' + r.status + '). Попробуйте обновить страницу или войти заново.', 'err'); return; }
+  if (!r.ok) { say('panelMsg', 'Не удалось загрузить оценки (код ' + r.status + '). Попробуйте обновить страницу или войти заново.', 'err'); return; }
   rows = await r.json(); render();
 }
 
@@ -159,9 +160,11 @@ function render() {
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.status === current)));
   const list = $('list'); list.textContent = '';
   const items = rows.filter(x => x.status === current);
+  $('bulk').hidden = !(current === 'pending' && items.length > 1);
+  $('bulkText').textContent = 'Новых оценок: ' + items.length;
   if (!items.length) {
     const e = document.createElement('div'); e.className = 'card empty';
-    e.textContent = current === 'pending' ? 'Новых отзывов на проверке нет.' : 'Здесь пока пусто.';
+    e.textContent = current === 'pending' ? 'Новых оценок на проверке нет.' : 'Здесь пока пусто.';
     list.append(e); return;
   }
   items.forEach(x => list.append(card(x)));
@@ -175,25 +178,23 @@ function btn(text, cls, handler) {
 function card(x) {
   const c = document.createElement('article'); c.className = 'card review';
   const row = document.createElement('div'); row.className = 'row';
+  const n = Math.max(1, Math.min(5, Number(x.rating) || 5));
   const left = document.createElement('div');
-  const name = document.createElement('h3'); name.textContent = x.name;
+  const stars = document.createElement('div'); stars.className = 'stars big';
+  stars.textContent = '★'.repeat(n) + '☆'.repeat(5 - n); stars.setAttribute('aria-label', n + ' из 5');
   const meta = document.createElement('div'); meta.className = 'meta';
   let when = ''; try { when = new Date(x.created_at).toLocaleString('ru-RU', {dateStyle: 'medium', timeStyle: 'short'}); } catch (e) {}
-  meta.textContent = [x.trip, when].filter(Boolean).join(' · ');
-  left.append(name, meta);
-  const right = document.createElement('div');
-  const stars = document.createElement('div'); stars.className = 'stars';
-  const n = Math.max(1, Math.min(5, Number(x.rating) || 5));
-  stars.textContent = '★'.repeat(n) + '☆'.repeat(5 - n); stars.setAttribute('aria-label', n + ' из 5');
+  meta.textContent = [x.name, x.trip, when].filter(Boolean).join(' · ');
+  left.append(stars, meta);
   const badge = document.createElement('span'); badge.className = 'badge b-' + x.status; badge.textContent = LABELS[x.status] || x.status;
-  right.append(stars, badge);
-  row.append(left, right);
-  const text = document.createElement('p'); text.className = 'text'; text.textContent = x.text;
-  const actions = document.createElement('div'); actions.className = 'actions';
+  row.append(left, badge);
+  c.append(row);
+  if (x.text) { const text = document.createElement('p'); text.className = 'text'; text.textContent = x.text; c.append(text); }
+  const actions = document.createElement('div'); actions.className = 'actions'; actions.style.marginTop = '14px';
   if (x.status !== 'published') actions.append(btn('Опубликовать', 'good', b => setStatus(x, 'published', b)));
   if (x.status !== 'hidden') actions.append(btn('Скрыть', 'warn', b => setStatus(x, 'hidden', b)));
   actions.append(btn('Удалить', 'bad', b => remove(x, b)));
-  c.append(row, text, actions);
+  c.append(actions);
   return c;
 }
 
@@ -201,15 +202,15 @@ async function setStatus(x, status, b) {
   b.disabled = true;
   const r = await api('/rest/v1/reviews?id=eq.' + encodeURIComponent(x.id), {method: 'PATCH', headers: {Prefer: 'return=minimal'}, body: JSON.stringify({status})});
   if (!r.ok) { b.disabled = false; say('panelMsg', 'Не удалось изменить статус (код ' + r.status + ').', 'err'); return; }
-  x.status = status; say('panelMsg', status === 'published' ? 'Отзыв опубликован на сайте.' : 'Отзыв скрыт с сайта.', 'ok'); render();
+  x.status = status; say('panelMsg', status === 'published' ? 'Оценка опубликована на сайте.' : 'Оценка скрыта с сайта.', 'ok'); render();
 }
 
 async function remove(x, b) {
-  if (!confirm('Удалить отзыв от «' + x.name + '» навсегда? Это нельзя отменить.\n\nЕсли отзыв просто не нужен на сайте, лучше нажать «Скрыть».')) return;
+  if (!confirm('Удалить эту оценку (' + x.rating + ' из 5) навсегда? Это нельзя отменить.\n\nЕсли оценка просто не нужна на сайте, лучше нажать «Скрыть».')) return;
   b.disabled = true;
   const r = await api('/rest/v1/reviews?id=eq.' + encodeURIComponent(x.id), {method: 'DELETE', headers: {Prefer: 'return=minimal'}});
-  if (!r.ok) { b.disabled = false; say('panelMsg', 'Не удалось удалить отзыв (код ' + r.status + ').', 'err'); return; }
-  rows = rows.filter(y => y.id !== x.id); say('panelMsg', 'Отзыв удалён.', 'ok'); render();
+  if (!r.ok) { b.disabled = false; say('panelMsg', 'Не удалось удалить оценку (код ' + r.status + ').', 'err'); return; }
+  rows = rows.filter(y => y.id !== x.id); say('panelMsg', 'Оценка удалена.', 'ok'); render();
 }
 
 $('loginForm').addEventListener('submit', async e => {
@@ -229,6 +230,16 @@ $('loginForm').addEventListener('submit', async e => {
 });
 $('logout').addEventListener('click', () => { saveSession(null); rows = []; show('login'); });
 $('refresh').addEventListener('click', load);
+$('publishAll').addEventListener('click', async b => {
+  const n = rows.filter(x => x.status === 'pending').length;
+  if (!confirm('Опубликовать все новые оценки (' + n + ')?')) return;
+  const btnEl = $('publishAll'); btnEl.disabled = true;
+  const r = await api('/rest/v1/reviews?status=eq.pending', {method: 'PATCH', headers: {Prefer: 'return=minimal'}, body: JSON.stringify({status: 'published'})});
+  btnEl.disabled = false;
+  if (!r.ok) { say('panelMsg', 'Не удалось опубликовать оценки (код ' + r.status + ').', 'err'); return; }
+  rows.forEach(x => { if (x.status === 'pending') x.status = 'published'; });
+  say('panelMsg', 'Опубликовано оценок: ' + n + '.', 'ok'); render();
+});
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { current = t.dataset.status; render(); }));
 
 (async function init() {
