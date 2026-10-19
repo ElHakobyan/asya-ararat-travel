@@ -1,14 +1,49 @@
 # Asya Ararat Travel
 
-Website: https://elhakobyan.github.io/asya-ararat-travel/
+Сайт: https://elhakobyan.github.io/asya-ararat-travel/
+Админ-панель отзывов: https://elhakobyan.github.io/asya-ararat-travel/admin.html (ссылка «Admin» есть и в подвале сайта)
 
-## Adding a client review
+Заявки с формы и кнопки связи ведут на номер +374 93 10 83 03 (WhatsApp, Viber, Telegram).
 
-Open `reviews.js`, copy the commented example block, remove the `//` and fill in the real review
-(name, text, rating 1–5, optional trip and date). Save and publish; the review appears in the
-"Traveler Reviews" section automatically. While the list is empty, visitors see an invitation to leave
-the first review via WhatsApp.
+## Как работают отзывы
 
-## Contacts
+1. Клиент нажимает «Leave a review», заполняет имя, поездку, оценку и текст.
+2. Отзыв сохраняется в базе со статусом «На проверке». На сайте его никто не видит.
+3. Администратор входит в админ-панель и нажимает:
+   - **Опубликовать**: отзыв появляется на сайте;
+   - **Скрыть**: отзыв убирается с сайта, но остаётся в базе (можно вернуть);
+   - **Удалить**: отзыв удаляется навсегда.
 
-Requests from the form and the "Leave a review" button open WhatsApp: +374 93 10 83 03.
+Пока база не подключена (шаги ниже), сайт работает как раньше: отзыв уходит в WhatsApp, Viber или Telegram,
+а опубликовать его можно вручную, добавив в файл `reviews.js`.
+
+## Подключение базы данных (один раз, бесплатно, ~10 минут)
+
+Используется Supabase (supabase.com). Нужен только ваш email.
+
+1. Зарегистрируйтесь на supabase.com и создайте проект (**New project**). Запомните пароль базы, но он нигде больше не понадобится.
+2. Откройте **SQL Editor → New query**, вставьте весь текст из файла `supabase-setup.sql` и нажмите **Run**.
+3. Откройте **Authentication → Users → Add user → Create new user**. Введите email и пароль администратора и поставьте галочку «Auto Confirm User». Затем нажмите на созданного пользователя и скопируйте его **User UID**.
+4. Снова откройте **SQL Editor** и выполните (подставьте свой UID):
+
+   ```sql
+   insert into public.admins (user_id) values ('ВАШ-USER-UID');
+   ```
+
+5. Откройте **Project Settings → API** и скопируйте **Project URL** и ключ **anon public** (или «Publishable key»).
+   Впишите их в файл `config.js` (или пришлите их Claude, он впишет сам). Эти два значения публичные, их не нужно прятать.
+
+Готово: после публикации сайта отзывы будут сохраняться в базе, а вы сможете войти в `admin.html` с email и паролем из шага 3.
+
+### Важно про безопасность
+
+- В `config.js` можно хранить **только** Project URL и ключ **anon public**. Ключ **service_role** и пароли туда добавлять нельзя.
+- Доступ к отзывам защищён правилами базы данных (см. `supabase-setup.sql`): посетители могут только отправить отзыв на проверку
+  и читать опубликованные; менять и удалять отзывы может только пользователь из таблицы `admins`.
+- Чтобы закрыть доступ бывшему администратору, удалите его строку из таблицы `admins` или самого пользователя в Authentication.
+- Если в отзывы начнёт приходить спам, его можно просто удалять в админ-панели. При необходимости можно добавить капчу.
+
+## Добавить отзыв вручную (без базы)
+
+Откройте `reviews.js`, скопируйте закомментированный пример, уберите `//` и впишите настоящий отзыв
+(name, text, rating 1–5, при желании trip и date).

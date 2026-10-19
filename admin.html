@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Админ-панель | Asya Ararat Travel</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+:root{--navy:#102a48;--red:#c9262e;--muted:#617080;--bg:#fdf7f4;--line:#e3e7eb}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--navy);background:var(--bg)}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;margin:0}
+.top{background:#fff;box-shadow:0 2px 14px #0b27461a;position:sticky;top:0;z-index:5}
+.top .in{max-width:980px;margin:auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top a{color:var(--navy);text-decoration:none;font-weight:700}
+.wrap{max-width:980px;margin:0 auto;padding:26px 18px 60px}
+.card{background:#fff;border-radius:14px;box-shadow:0 6px 26px #102a4812;padding:24px}
+.login{max-width:420px;margin:50px auto}
+label{display:block;font-weight:600;font-size:13px;margin:0 0 7px}
+input{width:100%;border:1px solid #dce1e5;border-radius:8px;padding:13px;font:15px Arial;color:var(--navy);margin-bottom:16px}
+button{font:600 14px Arial;cursor:pointer;border-radius:50px;padding:11px 20px;border:2px solid transparent}
+.primary{background:var(--red);color:#fff}.primary:hover{background:#a71c23}
+.ghost{background:#fff;color:var(--navy);border-color:var(--line)}.ghost:hover{background:#f3f5f7}
+.good{background:#e9f8ef;color:#0b6b35}.good:hover{background:#d6f1e0}
+.warn{background:#fff4e0;color:#8a5a00}.warn:hover{background:#ffe9c2}
+.bad{background:#fdecec;color:#a3141c}.bad:hover{background:#fad5d6}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+.msg{margin:0 0 16px;padding:12px 14px;border-radius:10px;font-size:14px;line-height:1.5}
+.msg.err{background:#fdecec;color:#a3141c}.msg.ok{background:#e9f8ef;color:#0b6b35}.msg.info{background:#eef3f8;color:var(--navy)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+.tab{background:#fff;border:2px solid var(--line);color:var(--navy)}
+.tab[aria-selected=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+.tab .n{display:inline-block;min-width:22px;margin-left:6px;padding:1px 7px;border-radius:12px;background:#0001;font-size:12px}
+.tab[aria-selected=true] .n{background:#fff3}
+.review{margin-bottom:14px}
+.row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.stars{color:#e5a823;letter-spacing:2px;font-size:18px}
+.meta{color:var(--muted);font-size:13px}
+.text{line-height:1.7;margin:12px 0 16px;white-space:pre-wrap;word-break:break-word}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700}
+.b-pending{background:#fff4e0;color:#8a5a00}.b-published{background:#e9f8ef;color:#0b6b35}.b-hidden{background:#eceff2;color:#505a64}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="top"><div class="in"><a href="./">← На сайт</a><strong>Админ-панель отзывов</strong><button class="ghost" id="logout" hidden>Выйти</button></div></div>
+<main class="wrap">
+
+<section id="notConfigured" class="card" hidden>
+  <h2>База данных ещё не подключена</h2>
+  <p class="msg info">В файле <b>config.js</b> нужно указать адрес проекта Supabase и публичный ключ. Шаги описаны в файле README.md.</p>
+</section>
+
+<section id="loginBox" class="card login" hidden>
+  <h2 style="margin-bottom:18px">Вход для администратора</h2>
+  <div id="loginMsg"></div>
+  <form id="loginForm">
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="password">Пароль</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <button class="primary" type="submit" id="loginBtn">Войти</button>
+  </form>
+</section>
+
+<section id="panel" hidden>
+  <div id="panelMsg"></div>
+  <div class="tabs" role="tablist" aria-label="Статус отзывов">
+    <button class="tab" role="tab" data-status="pending">На проверке<span class="n" id="n-pending">0</span></button>
+    <button class="tab" role="tab" data-status="published">Опубликованные<span class="n" id="n-published">0</span></button>
+    <button class="tab" role="tab" data-status="hidden">Скрытые<span class="n" id="n-hidden">0</span></button>
+    <button class="ghost" id="refresh" style="margin-left:auto">Обновить</button>
+  </div>
+  <div id="list"></div>
+</section>
+
+</main>
+
+<script src="config.js"></script>
+<script>
+const CFG = window.SUPABASE_CONFIG || {};
+const $ = id => document.getElementById(id);
+const STORE = 'asya-admin-session';
+const LABELS = {pending: 'На проверке', published: 'Опубликован', hidden: 'Скрыт'};
+let session = null, rows = [], current = 'pending';
+
+function say(boxId, text, kind) {
+  const box = $(boxId); box.textContent = '';
+  if (!text) return;
+  const p = document.createElement('p'); p.className = 'msg ' + (kind || 'info'); p.textContent = text; box.append(p);
+}
+function headers(extra) {
+  const h = {apikey: CFG.anonKey, 'Content-Type': 'application/json'};
+  if (session && session.access_token) h.Authorization = 'Bearer ' + session.access_token;
+  return Object.assign(h, extra || {});
+}
+function saveSession(s) {
+  session = s;
+  try { s ? sessionStorage.setItem(STORE, JSON.stringify(s)) : sessionStorage.removeItem(STORE); } catch (e) {}
+}
+async function refreshToken() {
+  if (!session || !session.refresh_token) return false;
+  try {
+    const r = await fetch(CFG.url + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST', headers: {apikey: CFG.anonKey, 'Content-Type': 'application/json'},
+      body: JSON.stringify({refresh_token: session.refresh_token})
+    });
+    if (!r.ok) return false;
+    const d = await r.json();
+    saveSession({access_token: d.access_token, refresh_token: d.refresh_token});
+    return true;
+  } catch (e) { return false; }
+}
+// fetch with one automatic token refresh when the login has expired
+async function api(path, options) {
+  let res = await fetch(CFG.url + path, Object.assign({}, options, {headers: headers(options && options.headers)}));
+  if (res.status === 401 && await refreshToken()) {
+    res = await fetch(CFG.url + path, Object.assign({}, options, {headers: headers(options && options.headers)}));
+  }
+  return res;
+}
+
+async function isAdmin() {
+  const r = await api('/rest/v1/admins?select=user_id', {method: 'GET'});
+  if (!r.ok) return false;
+  const d = await r.json();
+  return Array.isArray(d) && d.length > 0;
+}
+
+function show(which) {
+  $('notConfigured').hidden = which !== 'nc';
+  $('loginBox').hidden = which !== 'login';
+  $('panel').hidden = which !== 'panel';
+  $('logout').hidden = which !== 'panel';
+}
+
+async function enterPanel() {
+  if (!(await isAdmin())) {
+    saveSession(null); show('login');
+    say('loginMsg', 'У этого пользователя нет прав администратора. Проверьте, что его добавили в таблицу admins (шаг 4 в README.md).', 'err');
+    return;
+  }
+  show('panel'); await load();
+}
+
+async function load() {
+  say('panelMsg', '');
+  const r = await api('/rest/v1/reviews?select=*&order=created_at.desc', {method: 'GET'});
+  if (!r.ok) { say('panelMsg', 'Не удалось загрузить отзывы (код ' + r.status + '). Попробуйте обновить страницу или войти заново.', 'err'); return; }
+  rows = await r.json(); render();
+}
+
+function render() {
+  ['pending', 'published', 'hidden'].forEach(s => { $('n-' + s).textContent = rows.filter(x => x.status === s).length; });
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.status === current)));
+  const list = $('list'); list.textContent = '';
+  const items = rows.filter(x => x.status === current);
+  if (!items.length) {
+    const e = document.createElement('div'); e.className = 'card empty';
+    e.textContent = current === 'pending' ? 'Новых отзывов на проверке нет.' : 'Здесь пока пусто.';
+    list.append(e); return;
+  }
+  items.forEach(x => list.append(card(x)));
+}
+
+function btn(text, cls, handler) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = text;
+  b.addEventListener('click', () => handler(b)); return b;
+}
+
+function card(x) {
+  const c = document.createElement('article'); c.className = 'card review';
+  const row = document.createElement('div'); row.className = 'row';
+  const left = document.createElement('div');
+  const name = document.createElement('h3'); name.textContent = x.name;
+  const meta = document.createElement('div'); meta.className = 'meta';
+  let when = ''; try { when = new Date(x.created_at).toLocaleString('ru-RU', {dateStyle: 'medium', timeStyle: 'short'}); } catch (e) {}
+  meta.textContent = [x.trip, when].filter(Boolean).join(' · ');
+  left.append(name, meta);
+  const right = document.createElement('div');
+  const stars = document.createElement('div'); stars.className = 'stars';
+  const n = Math.max(1, Math.min(5, Number(x.rating) || 5));
+  stars.textContent = '★'.repeat(n) + '☆'.repeat(5 - n); stars.setAttribute('aria-label', n + ' из 5');
+  const badge = document.createElement('span'); badge.className = 'badge b-' + x.status; badge.textContent = LABELS[x.status] || x.status;
+  right.append(stars, badge);
+  row.append(left, right);
+  const text = document.createElement('p'); text.className = 'text'; text.textContent = x.text;
+  const actions = document.createElement('div'); actions.className = 'actions';
+  if (x.status !== 'published') actions.append(btn('Опубликовать', 'good', b => setStatus(x, 'published', b)));
+  if (x.status !== 'hidden') actions.append(btn('Скрыть', 'warn', b => setStatus(x, 'hidden', b)));
+  actions.append(btn('Удалить', 'bad', b => remove(x, b)));
+  c.append(row, text, actions);
+  return c;
+}
+
+async function setStatus(x, status, b) {
+  b.disabled = true;
+  const r = await api('/rest/v1/reviews?id=eq.' + encodeURIComponent(x.id), {method: 'PATCH', headers: {Prefer: 'return=minimal'}, body: JSON.stringify({status})});
+  if (!r.ok) { b.disabled = false; say('panelMsg', 'Не удалось изменить статус (код ' + r.status + ').', 'err'); return; }
+  x.status = status; say('panelMsg', status === 'published' ? 'Отзыв опубликован на сайте.' : 'Отзыв скрыт с сайта.', 'ok'); render();
+}
+
+async function remove(x, b) {
+  if (!confirm('Удалить отзыв от «' + x.name + '» навсегда? Это нельзя отменить.\n\nЕсли отзыв просто не нужен на сайте, лучше нажать «Скрыть».')) return;
+  b.disabled = true;
+  const r = await api('/rest/v1/reviews?id=eq.' + encodeURIComponent(x.id), {method: 'DELETE', headers: {Prefer: 'return=minimal'}});
+  if (!r.ok) { b.disabled = false; say('panelMsg', 'Не удалось удалить отзыв (код ' + r.status + ').', 'err'); return; }
+  rows = rows.filter(y => y.id !== x.id); say('panelMsg', 'Отзыв удалён.', 'ok'); render();
+}
+
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault(); say('loginMsg', ''); $('loginBtn').disabled = true;
+  try {
+    const r = await fetch(CFG.url + '/auth/v1/token?grant_type=password', {
+      method: 'POST', headers: {apikey: CFG.anonKey, 'Content-Type': 'application/json'},
+      body: JSON.stringify({email: $('email').value.trim(), password: $('password').value})
+    });
+    if (!r.ok) { say('loginMsg', 'Неверный email или пароль.', 'err'); return; }
+    const d = await r.json();
+    saveSession({access_token: d.access_token, refresh_token: d.refresh_token});
+    $('password').value = '';
+    await enterPanel();
+  } catch (err) { say('loginMsg', 'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.', 'err'); }
+  finally { $('loginBtn').disabled = false; }
+});
+$('logout').addEventListener('click', () => { saveSession(null); rows = []; show('login'); });
+$('refresh').addEventListener('click', load);
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { current = t.dataset.status; render(); }));
+
+(async function init() {
+  if (!CFG.url || !CFG.anonKey) { show('nc'); return; }
+  try { const saved = JSON.parse(sessionStorage.getItem(STORE) || 'null'); if (saved && saved.access_token) session = saved; } catch (e) {}
+  if (session) { await enterPanel(); } else { show('login'); }
+})();
+</script>
+</body>
+</html>
