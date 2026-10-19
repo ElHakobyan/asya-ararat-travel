@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://elhakobyan.github.io/asya-ararat-travel/sitemap.xml
