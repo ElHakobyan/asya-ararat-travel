@@ -1,0 +1,5 @@
+# Minimal Supabase CLI config for deploying the chat function.
+# The function is public by design (website visitors call it); it protects itself with
+# per-IP and daily limits, an origin allow-list and input validation (see supabase/functions/chat).
+[functions.chat]
+verify_jwt = false

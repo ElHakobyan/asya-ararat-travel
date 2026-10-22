@@ -11,3 +11,4 @@ jobs:
         with:
           node-version: 22
       - run: node tests/check.mjs
+      - run: node --test tests/agent.test.mjs

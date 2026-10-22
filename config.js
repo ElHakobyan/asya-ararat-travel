@@ -8,3 +8,5 @@ window.SUPABASE_CONFIG = {
   url: "",
   anonKey: ""
 };
+// Optional: window.SUPABASE_CONFIG.chatUrl overrides the AI assistant endpoint
+// (default: <url>/functions/v1/chat). The chat button appears once url and anonKey are filled in.

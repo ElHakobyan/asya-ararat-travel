@@ -43,11 +43,22 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--navy);outline-o
 .empty{text-align:center;color:var(--muted);padding:40px 10px}
 .badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700}
 .b-pending{background:#fff4e0;color:#8a5a00}.b-published{background:#e9f8ef;color:#0b6b35}.b-hidden{background:#eceff2;color:#505a64}
+.modes{display:flex;gap:8px;margin:0 0 6px}
+.mode{background:#fff;border:2px solid var(--line);color:var(--navy)}.mode[aria-selected=true]{background:var(--red);border-color:var(--red);color:#fff}
+.mode .n{display:inline-block;min-width:22px;margin-left:6px;padding:1px 7px;border-radius:12px;background:#0001;font-size:12px}
+.mode[aria-selected=true] .n{background:#fff3}
+.b-hot{background:#fdecec;color:#a3141c}.b-warm{background:#fff4e0;color:#8a5a00}.b-cold{background:#eceff2;color:#505a64}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px 18px;margin:12px 0;font-size:14px}
+.facts b{display:block;font-size:12px;color:var(--muted);font-weight:600}
+.contact a{color:var(--red);font-weight:700}
+details.talk{margin:12px 0}details.talk summary{cursor:pointer;color:var(--muted);font-size:13px}
+.talk .m{margin:6px 0;padding:8px 11px;border-radius:10px;font-size:13.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.talk .m.user{background:#fdecec}.talk .m.assistant{background:#eef3f8}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
-<div class="top"><div class="in"><a href="./">← На сайт</a><strong>Админ-панель оценок</strong><button class="ghost" id="logout" hidden>Выйти</button></div></div>
+<div class="top"><div class="in"><a href="./">← На сайт</a><strong>Админ-панель</strong><button class="ghost" id="logout" hidden>Выйти</button></div></div>
 <main class="wrap">
 
 <section id="notConfigured" class="card" hidden>
@@ -69,6 +80,11 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--navy);outline-o
 
 <section id="panel" hidden>
   <div id="panelMsg"></div>
+  <div class="modes" role="tablist" aria-label="Раздел">
+    <button class="mode" role="tab" data-mode="reviews">Оценки<span class="n" id="n-reviews">0</span></button>
+    <button class="mode" role="tab" data-mode="leads">Заявки клиентов<span class="n" id="n-leads">0</span></button>
+  </div>
+  <div id="reviewsView">
   <div class="tabs" role="tablist" aria-label="Статус отзывов">
     <button class="tab" role="tab" data-status="pending">На проверке<span class="n" id="n-pending">0</span></button>
     <button class="tab" role="tab" data-status="published">Опубликованные<span class="n" id="n-published">0</span></button>
@@ -77,6 +93,16 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--navy);outline-o
   </div>
   <div id="bulk" class="card" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap" hidden><span id="bulkText"></span><button class="good" id="publishAll">Опубликовать все</button></div>
   <div id="list"></div>
+  </div>
+  <div id="leadsView" hidden>
+    <div class="tabs" role="tablist" aria-label="Статус заявок">
+      <button class="tab" role="tab" data-lstatus="new">Новые<span class="n" id="ln-new">0</span></button>
+      <button class="tab" role="tab" data-lstatus="contacted">В работе<span class="n" id="ln-contacted">0</span></button>
+      <button class="tab" role="tab" data-lstatus="won">Продано<span class="n" id="ln-won">0</span></button>
+      <button class="tab" role="tab" data-lstatus="lost">Отказ<span class="n" id="ln-lost">0</span></button>
+    </div>
+    <div id="leadList"></div>
+  </div>
 </section>
 
 </main>
@@ -152,12 +178,13 @@ async function load() {
   say('panelMsg', '');
   const r = await api('/rest/v1/reviews?select=*&order=created_at.desc', {method: 'GET'});
   if (!r.ok) { say('panelMsg', 'Не удалось загрузить оценки (код ' + r.status + '). Попробуйте обновить страницу или войти заново.', 'err'); return; }
-  rows = await r.json(); render();
+  rows = await r.json(); render(); $('n-reviews').textContent = rows.filter(x => x.status === 'pending').length;
+  await loadLeads(); setMode(mode);
 }
 
 function render() {
   ['pending', 'published', 'hidden'].forEach(s => { $('n-' + s).textContent = rows.filter(x => x.status === s).length; });
-  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.status === current)));
+  document.querySelectorAll('[data-status]').forEach(t => t.setAttribute('aria-selected', String(t.dataset.status === current)));
   const list = $('list'); list.textContent = '';
   const items = rows.filter(x => x.status === current);
   $('bulk').hidden = !(current === 'pending' && items.length > 1);
@@ -213,6 +240,96 @@ async function remove(x, b) {
   rows = rows.filter(y => y.id !== x.id); say('panelMsg', 'Оценка удалена.', 'ok'); render();
 }
 
+/* ---------- Заявки клиентов (AI-агент) ---------- */
+const LSTATUS = {new: 'Новая', contacted: 'В работе', won: 'Продано', lost: 'Отказ'};
+const READY = {hot: '🔥 Горячий', warm: '🟡 Тёплый', cold: '⚪ Холодный'};
+let leads = [], leadsOk = true, lcurrent = 'new', mode = 'reviews';
+
+async function loadLeads() {
+  const r = await api('/rest/v1/leads?select=*&order=created_at.desc', {method: 'GET'});
+  if (!r.ok) { leadsOk = false; leads = []; $('n-leads').textContent = '–'; return; }
+  leadsOk = true; leads = await r.json(); renderLeads();
+}
+function contactNode(v) {
+  const span = document.createElement('span'); span.className = 'contact';
+  const text = String(v || '');
+  const digits = text.replace(/\D/g, '');
+  if (/^\+?[\d\s()-]{7,}$/.test(text) && digits.length >= 7 && digits.length <= 15) {
+    const a = document.createElement('a'); a.href = 'https://wa.me/' + digits; a.target = '_blank'; a.rel = 'noopener'; a.textContent = text + ' (WhatsApp)'; span.append(a);
+  } else if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) {
+    const a = document.createElement('a'); a.href = 'mailto:' + text; a.textContent = text; span.append(a);
+  } else { span.textContent = text; }
+  return span;
+}
+function fact(label, value) {
+  const d = document.createElement('div'); const b = document.createElement('b'); b.textContent = label;
+  const v = document.createElement('span'); v.textContent = value || '—'; d.append(b, v); return d;
+}
+function leadCard(x) {
+  const c = document.createElement('article'); c.className = 'card review';
+  const row = document.createElement('div'); row.className = 'row';
+  const left = document.createElement('div');
+  const h = document.createElement('h3'); h.textContent = x.name || 'Без имени';
+  const meta = document.createElement('div'); meta.className = 'meta';
+  let when = ''; try { when = new Date(x.created_at).toLocaleString('ru-RU', {dateStyle: 'medium', timeStyle: 'short'}); } catch (e) {}
+  meta.textContent = when;
+  left.append(h, meta);
+  const badge = document.createElement('span'); badge.className = 'badge b-' + (READY[x.readiness] ? x.readiness : 'warm'); badge.textContent = READY[x.readiness] || x.readiness;
+  row.append(left, badge); c.append(row);
+  const facts = document.createElement('div'); facts.className = 'facts';
+  const contactBox = document.createElement('div'); const cb = document.createElement('b'); cb.textContent = 'Контакт'; contactBox.append(cb, contactNode(x.contact));
+  facts.append(contactBox, fact('Тур', x.tour_interest), fact('Человек', x.travelers == null ? '' : String(x.travelers)), fact('Даты', x.dates), fact('Бюджет', x.budget));
+  c.append(facts);
+  if (x.summary) { const t = document.createElement('p'); t.className = 'text'; t.textContent = x.summary; c.append(t); }
+  if (Array.isArray(x.transcript) && x.transcript.length) {
+    const d = document.createElement('details'); d.className = 'talk';
+    const sm = document.createElement('summary'); sm.textContent = 'Переписка (' + x.transcript.length + ')'; d.append(sm);
+    x.transcript.forEach(m => { const p = document.createElement('div'); p.className = 'm ' + (m.role === 'assistant' ? 'assistant' : 'user'); p.textContent = (m.role === 'assistant' ? 'Помощник: ' : 'Клиент: ') + String(m.content || ''); d.append(p); });
+    c.append(d);
+  }
+  const actions = document.createElement('div'); actions.className = 'actions';
+  if (x.status !== 'contacted') actions.append(btn('В работе', 'warn', b => setLead(x, 'contacted', b)));
+  if (x.status !== 'won') actions.append(btn('Продано', 'good', b => setLead(x, 'won', b)));
+  if (x.status !== 'lost') actions.append(btn('Отказ', 'ghost', b => setLead(x, 'lost', b)));
+  actions.append(btn('Удалить', 'bad', b => removeLead(x, b)));
+  c.append(actions); return c;
+}
+function renderLeads() {
+  const order = {hot: 0, warm: 1, cold: 2};
+  Object.keys(LSTATUS).forEach(s => { $('ln-' + s).textContent = leads.filter(x => x.status === s).length; });
+  $('n-leads').textContent = leads.filter(x => x.status === 'new').length;
+  document.querySelectorAll('[data-lstatus]').forEach(t => t.setAttribute('aria-selected', String(t.dataset.lstatus === lcurrent)));
+  const list = $('leadList'); list.textContent = '';
+  if (!leadsOk) {
+    const e = document.createElement('div'); e.className = 'card empty';
+    e.textContent = 'Таблица заявок ещё не создана. Выполните файл supabase-agent.sql в Supabase (см. README.md).'; list.append(e); return;
+  }
+  const items = leads.filter(x => x.status === lcurrent).sort((a, b) => (order[a.readiness] ?? 1) - (order[b.readiness] ?? 1) || new Date(b.created_at) - new Date(a.created_at));
+  if (!items.length) { const e = document.createElement('div'); e.className = 'card empty'; e.textContent = 'Здесь пока пусто.'; list.append(e); return; }
+  items.forEach(x => list.append(leadCard(x)));
+}
+async function setLead(x, status, b) {
+  b.disabled = true;
+  const r = await api('/rest/v1/leads?id=eq.' + encodeURIComponent(x.id), {method: 'PATCH', headers: {Prefer: 'return=minimal'}, body: JSON.stringify({status})});
+  if (!r.ok) { b.disabled = false; say('panelMsg', 'Не удалось изменить статус заявки (код ' + r.status + ').', 'err'); return; }
+  x.status = status; say('panelMsg', 'Статус заявки: ' + LSTATUS[status] + '.', 'ok'); renderLeads();
+}
+async function removeLead(x, b) {
+  if (!confirm('Удалить заявку ' + (x.name || x.contact) + ' навсегда? Это нельзя отменить.')) return;
+  b.disabled = true;
+  const r = await api('/rest/v1/leads?id=eq.' + encodeURIComponent(x.id), {method: 'DELETE', headers: {Prefer: 'return=minimal'}});
+  if (!r.ok) { b.disabled = false; say('panelMsg', 'Не удалось удалить заявку (код ' + r.status + ').', 'err'); return; }
+  leads = leads.filter(y => y.id !== x.id); say('panelMsg', 'Заявка удалена.', 'ok'); renderLeads();
+}
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode').forEach(t => t.setAttribute('aria-selected', String(t.dataset.mode === m)));
+  $('reviewsView').hidden = m !== 'reviews'; $('leadsView').hidden = m !== 'leads';
+  if (m === 'leads') renderLeads();
+}
+document.querySelectorAll('.mode').forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
+document.querySelectorAll('[data-lstatus]').forEach(t => t.addEventListener('click', () => { lcurrent = t.dataset.lstatus; renderLeads(); }));
+
 $('loginForm').addEventListener('submit', async e => {
   e.preventDefault(); say('loginMsg', ''); $('loginBtn').disabled = true;
   try {
@@ -240,7 +357,7 @@ $('publishAll').addEventListener('click', async b => {
   rows.forEach(x => { if (x.status === 'pending') x.status = 'published'; });
   say('panelMsg', 'Опубликовано оценок: ' + n + '.', 'ok'); render();
 });
-document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { current = t.dataset.status; render(); }));
+document.querySelectorAll('[data-status]').forEach(t => t.addEventListener('click', () => { current = t.dataset.status; render(); }));
 
 (async function init() {
   if (!CFG.url || !CFG.anonKey) { show('nc'); return; }
