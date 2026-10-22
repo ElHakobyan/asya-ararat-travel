@@ -1,5 +1,5 @@
 /* AI travel assistant: talks to the Supabase Edge Function "chat". Hidden until the database is connected (config.js). */
-(function(){const CHAT_URL=CFG.chatUrl||(CFG.url?CFG.url+'/functions/v1/chat':'');if(!CHAT_URL||!CFG.anonKey)return;
+(function(){const CHAT_URL=CFG.chatUrl||(CFG.url?CFG.url+'/functions/v1/chat':'');const DEMO=!!(CFG.demo&&window.DEMO_REPLY);if(!DEMO&&(!CHAT_URL||!CFG.anonKey))return;
 const box=document.getElementById('chat'),fab=document.getElementById('chatFab'),panel=document.getElementById('chatPanel'),log=document.getElementById('chatLog'),form=document.getElementById('chatForm'),input=document.getElementById('chatInput'),chips=document.getElementById('chatChips'),sendBtn=document.getElementById('chatSend'),langSel=document.getElementById('lang');
 box.hidden=false;
 let history=[],busy=false,hello=null,session='';
@@ -16,7 +16,8 @@ langSel.addEventListener('change',applyLabels);
 chips.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>send(T()[b.dataset.q])));
 form.addEventListener('submit',e=>{e.preventDefault();const t=input.value.trim();if(t){input.value='';send(t)}});
 async function send(text){if(busy||!text)return;busy=true;sendBtn.disabled=true;chips.hidden=true;add(text,'me');history.push({role:'user',content:text});const wait=add(T().chatTyping,'bot typing');
-try{const r=await fetch(CHAT_URL,{method:'POST',headers:Object.assign({'Content-Type':'application/json'},dbHeaders()),body:JSON.stringify({messages:history.slice(-20),session:session})});const j=await r.json().catch(()=>({}));wait.remove();
+try{if(DEMO){const rep=await window.DEMO_REPLY(text,history);wait.remove();add(rep,'bot');history.push({role:'assistant',content:rep});return}
+const r=await fetch(CHAT_URL,{method:'POST',headers:Object.assign({'Content-Type':'application/json'},dbHeaders()),body:JSON.stringify({messages:history.slice(-20),session:session})});const j=await r.json().catch(()=>({}));wait.remove();
 if(j&&typeof j.reply==='string'&&j.reply){add(j.reply,'bot');history.push({role:'assistant',content:j.reply})}else{throw new Error('empty')}}
 catch(err){wait.remove();const m=add(T().chatError+' ','bot');const a=document.createElement('a');a.href='https://wa.me/'+WA_NUMBER;a.target='_blank';a.rel='noopener';a.textContent='WhatsApp';m.appendChild(a);history.pop()}
 finally{busy=false;sendBtn.disabled=false;input.focus()}}

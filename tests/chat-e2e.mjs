@@ -74,6 +74,25 @@ try {
     ok(errors.length === 0, `[${name}] no page errors ${errors.join('|')}`);
     await pg.close();
   }
+  // 3b) demo.html: scripted chat, works with no database, no network calls, never indexed
+  {
+    const dp = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const calls = []; dp.on('request', (r) => { if (/^https?:/.test(r.url()) && !/unsplash/.test(r.url())) calls.push(r.url()); });
+    const errs = []; dp.on('pageerror', (e) => errs.push(String(e)));
+    await dp.goto('file://' + join(root, 'demo.html')); await dp.waitForTimeout(300);
+    ok(await dp.locator('#chatFab').isVisible(), 'demo: chat available without a database');
+    ok((await dp.getAttribute('meta[name=robots]', 'content')).includes('noindex'), 'demo: noindex');
+    await dp.click('#chatFab');
+    for (const [q, expect] of [['How much does it cost?', /manager confirms/], ['Сколько стоит тур?', /менеджер/], ['Երբ գնալ', /ակուրա/], ['Kyoto in April', /Kyoto/], ['+374 99 123456', /Demo: nothing was saved/]]) {
+      await dp.fill('#chatInput', q); await dp.press('#chatInput', 'Enter');
+      await dp.waitForFunction(() => !document.querySelector('.msg.typing') && !document.getElementById('chatSend').disabled);
+      ok(expect.test(await dp.locator('.msg.bot').last().textContent()), `demo: reply to "${q}"`);
+    }
+    if (shots) await dp.screenshot({ path: join(shots, 'demo.png') });
+    ok(calls.length === 0, `demo: no network requests (${calls.join(',')})`);
+    ok(errs.length === 0, 'demo: no page errors ' + errs.join('|'));
+    await dp.close();
+  }
   // 4) server down: friendly error with WhatsApp link, no crash
   pg = await browser.newPage();
   await pg.route('**/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: 'window.SUPABASE_CONFIG={url:"http://127.0.0.1:9",anonKey:"eyJtest"}' }));
