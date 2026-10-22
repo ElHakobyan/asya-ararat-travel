@@ -4,7 +4,7 @@ import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { build } from '../build.mjs';
+import { build, buildDemo } from '../build.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
@@ -13,6 +13,7 @@ const fail = (m) => errors.push(m);
 // 1. index.html must be exactly what src/ builds to
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 if (html !== build()) fail('index.html is out of date - run: node build.mjs');
+if (readFileSync(join(root, 'demo.html'), 'utf8') !== buildDemo()) fail('demo.html is out of date - run: node build.mjs');
 
 // 2. The inline script must parse
 const script = html.slice(html.lastIndexOf('<script>') + 8, html.lastIndexOf('</script>'));

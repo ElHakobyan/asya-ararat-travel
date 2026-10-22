@@ -1,0 +1,26 @@
+/* DEMO ONLY (demo.html): scripted answers in place of the real AI agent. Nothing is sent or saved. */
+window.DEMO_REPLY=function(text,history){
+  var t=String(text||''),low=t.toLowerCase(),L=/[Ա-֏]/.test(t)?'hy':(/[Ѐ-ӿ]/.test(t)?'ru':'en');
+  var digits=(t.match(/\d/g)||[]).length,contact=digits>=7||/@\w{3,}|\S+@\S+\.\S+/.test(t);
+  var A={
+    contact:{en:'Thank you! I passed your details to our manager: they will message you shortly with an exact offer. You can also write to +374 93 10 83 03. (Demo: nothing was saved.)',ru:'Спасибо! Я передала ваши данные менеджеру: он скоро напишет вам с точным предложением. Можно также написать на +374 93 10 83 03. (Демо: ничего не сохранено.)',hy:'Շնորհակալություն։ Ձեր տվյալները փոխանցեցի մենեջերին, նա շուտով կգրի ձեզ ճշգրիտ առաջարկով։ Կարող եք նաև գրել +374 93 10 83 03 համարով։ (Դեմո. ոչինչ չի պահպանվել։)'},
+    price:{en:'Prices depend on the tour, the dates and the group size, and our manager confirms the exact offer. Which tour interests you most, and how many people would travel?',ru:'Цена зависит от тура, дат и размера группы, а точное предложение подтверждает менеджер. Какой тур вам интереснее всего и сколько человек поедет?',hy:'Գինը կախված է տուրից, ամսաթվերից և խմբի չափից, ճշգրիտ առաջարկը հաստատում է մենեջերը։ Ո՞ր տուրն է ձեզ առավել հետաքրքրում և քանի՞ հոգի եք մեկնելու։'},
+    when:{en:'Cherry blossoms usually bloom from late March to mid April, autumn colours peak in November, and May or October are mild and less crowded. When are you thinking of going?',ru:'Сакура обычно цветёт с конца марта до середины апреля, осенние краски пик в ноябре, а май и октябрь мягкие и не такие людные. Когда вы думаете ехать?',hy:'Սակուրան սովորաբար ծաղկում է մարտի վերջից մինչև ապրիլի կեսերը, աշնան գույները գագաթնակետին են նոյեմբերին, իսկ մայիսն ու հոկտեմբերը մեղմ են և ավելի քիչ բանուկ։ Ե՞րբ եք մտածում մեկնել։'},
+    incl:{en:'The exact inclusions are confirmed by our manager for each date. I can pass your request on: how many people, and which dates?',ru:'Точный состав тура менеджер подтверждает под каждую дату. Могу передать ваш запрос: сколько человек и на какие даты?',hy:'Տուրի ճշգրիտ բովանդակությունը մենեջերը հաստատում է յուրաքանչյուր ամսաթվի համար։ Կարող եմ փոխանցել ձեր հարցումը. քանի՞ հոգի և ի՞նչ ամսաթվերի համար։'},
+    kyoto:{en:'Kyoto & Sakura is perfect for temples, old streets and blossom season. How many people would travel, and in which month? If you leave a WhatsApp number, our manager will send an offer.',ru:'«Киото и сакура»: храмы, старинные улочки и сезон цветения. Сколько человек поедет и в каком месяце? Оставьте номер WhatsApp, и менеджер пришлёт предложение.',hy:'«Կիոտո և սակուրա» տուրը հիանալի է տաճարների, հին փողոցների և ծաղկման սեզոնի համար։ Քանի՞ հոգի և որ ամսին։ Թողեք WhatsApp համարը, և մենեջերը կուղարկի առաջարկ։'},
+    tokyo:{en:'Tokyo Discovery is for neon streets, food and big-city energy. How many people, and when? Leave a WhatsApp number and our manager will prepare an offer.',ru:'«Токио» подходит для неоновых улиц, еды и ритма мегаполиса. Сколько человек и когда? Оставьте номер WhatsApp, и менеджер подготовит предложение.',hy:'«Տոկիո» տուրը նախատեսված է նեոնային փողոցների, խոհանոցի և մեծ քաղաքի ռիթմի համար։ Քանի՞ հոգի և ե՞րբ։ Թողեք WhatsApp համարը, և մենեջերը կպատրաստի առաջարկ։'},
+    fuji:{en:'Mount Fuji & Nature is for lakes, mountain views and fresh air. How many people, and which season? Leave a contact and our manager will send an offer.',ru:'«Фудзи и природа»: озёра, виды на гору и свежий воздух. Сколько человек и в какой сезон? Оставьте контакт, и менеджер пришлёт предложение.',hy:'«Ֆուջի և բնություն» տուրը լճերի, լեռնային տեսարանների և մաքուր օդի համար է։ Քանի՞ հոգի և որ սեզոնին։ Թողեք կոնտակտ, և մենեջերը կուղարկի առաջարկ։'},
+    trad:{en:'Traditional Japan is about temples, tea, old architecture and culture. How many people, and when? Leave a contact and our manager will send an offer.',ru:'«Традиционная Япония»: храмы, чай, старинная архитектура и культура. Сколько человек и когда? Оставьте контакт, и менеджер пришлёт предложение.',hy:'«Ավանդական Ճապոնիա» տուրը տաճարների, թեյի, հին ճարտարապետության և մշակույթի մասին է։ Քանի՞ հոգի և ե՞րբ։ Թողեք կոնտակտ, և մենեջերը կուղարկի առաջարկ։'},
+    dflt:{en:'Happy to help! Which part of Japan attracts you most: Tokyo, Kyoto, Mount Fuji or traditional Japan? And when would you like to travel?',ru:'С радостью помогу! Что вас больше привлекает в Японии: Токио, Киото, гора Фудзи или традиционная Япония? И когда хотите поехать?',hy:'Սիրով կօգնեմ։ Ճապոնիայի ո՞ր մասն է ձեզ առավել գրավում՝ Տոկիո, Կիոտո, Ֆուջի լեռ թե ավանդական Ճապոնիա։ Եվ ե՞րբ եք ցանկանում մեկնել։'}
+  },has=function(re){return re.test(low)};
+  var k='dflt';
+  if(contact)k='contact';
+  else if(has(/price|cost|how much|цен|сколько|стоим|գին|արժե/))k='price';
+  else if(has(/when|season|best time|когда|сезон|ե՞րբ|երբ|սեզոն/))k='when';
+  else if(has(/includ|входит|включ|ներառ/))k='incl';
+  else if(has(/kyoto|киото|կիոտո|sakura|сакур|սակուր/))k='kyoto';
+  else if(has(/tokyo|токио|տոկիո/))k='tokyo';
+  else if(has(/fuji|фудзи|ֆուջի/))k='fuji';
+  else if(has(/tradition|традиц|ավանդ/))k='trad';
+  return new Promise(function(res){setTimeout(function(){res(A[k][L])},650)});
+};
