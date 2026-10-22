@@ -1,0 +1,59 @@
+{
+  "_note": "Edit this file to teach the agent about your tours. Anything left as null is NOT invented by the agent: it tells the client that the manager will confirm it. After editing, redeploy the function (see README).",
+  "agency": {
+    "name": "Asya Ararat Travel",
+    "city": "Yerevan, Armenia",
+    "phone": "+374 93 10 83 03",
+    "channels": ["WhatsApp", "Viber", "Telegram"],
+    "languages": ["Armenian", "Russian", "English"],
+    "about": "Boutique agency specialising in journeys to Japan: carefully designed itineraries, local experience, full support from planning to return, small groups."
+  },
+  "tours": [
+    {
+      "id": "tokyo",
+      "name": "Tokyo Discovery",
+      "summary": "Neon-lit streets, food and unforgettable city experiences.",
+      "days": null,
+      "price_from_usd": null,
+      "next_departures": null,
+      "includes": null,
+      "group_size": null
+    },
+    {
+      "id": "kyoto",
+      "name": "Kyoto & Sakura",
+      "summary": "Historic streets, temples and blossom season.",
+      "days": null,
+      "price_from_usd": null,
+      "next_departures": null,
+      "includes": null,
+      "group_size": null
+    },
+    {
+      "id": "fuji",
+      "name": "Mount Fuji & Nature",
+      "summary": "Landscapes, lakes and the beauty of Japan.",
+      "days": null,
+      "price_from_usd": null,
+      "next_departures": null,
+      "includes": null,
+      "group_size": null
+    },
+    {
+      "id": "traditional",
+      "name": "Traditional Japan",
+      "summary": "Traditions, architecture and culture of Japan.",
+      "days": null,
+      "price_from_usd": null,
+      "next_departures": null,
+      "includes": null,
+      "group_size": null
+    }
+  ],
+  "faq": [],
+  "policies": {
+    "deposit": null,
+    "cancellation": null,
+    "visa": null
+  }
+}

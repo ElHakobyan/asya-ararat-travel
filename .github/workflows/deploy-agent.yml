@@ -1,0 +1,38 @@
+name: Deploy AI agent
+# Manual only: GitHub -> Actions -> "Deploy AI agent" -> Run workflow.
+# Needs these repository secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF, ANTHROPIC_API_KEY
+# Optional: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, IP_SALT
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run the tests first
+        run: node tests/check.mjs && node --test tests/agent.test.mjs
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Set secrets
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          IP_SALT: ${{ secrets.IP_SALT }}
+        run: |
+          test -n "$ANTHROPIC_API_KEY" || { echo "ANTHROPIC_API_KEY secret is missing"; exit 1; }
+          args="ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
+          [ -n "$TELEGRAM_BOT_TOKEN" ] && args="$args TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN"
+          [ -n "$TELEGRAM_CHAT_ID" ] && args="$args TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID"
+          [ -n "$IP_SALT" ] && args="$args IP_SALT=$IP_SALT"
+          supabase secrets set $args --project-ref "$PROJECT_REF"
+      - name: Deploy function
+        run: supabase functions deploy chat --project-ref "$PROJECT_REF" --no-verify-jwt
