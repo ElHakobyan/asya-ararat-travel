@@ -18,7 +18,7 @@ h1,h2,h3{font-family:Georgia,"Times New Roman",serif;margin:0}
 .card{background:#fff;border-radius:14px;box-shadow:0 6px 26px #102a4812;padding:24px}
 .login{max-width:420px;margin:50px auto}
 label{display:block;font-weight:600;font-size:13px;margin:0 0 7px}
-input{width:100%;border:1px solid #dce1e5;border-radius:8px;padding:13px;font:15px Arial;color:var(--navy);margin-bottom:16px}
+textarea,select{width:100%;padding:12px;margin-bottom:16px;border:1px solid #dce1e5;border-radius:8px;font:15px Arial}textarea{min-height:100px}.modes{flex-wrap:wrap}fieldset{border:1px solid var(--line);border-radius:10px;margin:16px 0;padding:16px}input{width:100%;border:1px solid #dce1e5;border-radius:8px;padding:13px;font:15px Arial;color:var(--navy);margin-bottom:16px}
 button{font:600 14px Arial;cursor:pointer;border-radius:50px;padding:11px 20px;border:2px solid transparent}
 .primary{background:var(--red);color:#fff}.primary:hover{background:#a71c23}
 .ghost{background:#fff;color:var(--navy);border-color:var(--line)}.ghost:hover{background:#f3f5f7}
@@ -81,8 +81,26 @@ details.talk{margin:12px 0}details.talk summary{cursor:pointer;color:var(--muted
 <section id="panel" hidden>
   <div id="panelMsg"></div>
   <div class="modes" role="tablist" aria-label="Раздел">
+    <button class="mode" role="tab" data-mode="tours">Туры и цены</button>
     <button class="mode" role="tab" data-mode="reviews">Оценки<span class="n" id="n-reviews">0</span></button>
     <button class="mode" role="tab" data-mode="leads">Заявки клиентов<span class="n" id="n-leads">0</span></button>
+  </div>
+  <div id="toursView" hidden>
+    <p>Создайте тур, заполните переводы и сохраните черновик или опубликуйте. Опубликованные изменения видны после обновления сайта.</p>
+    <p class="msg info">Каталог сайта и база знаний AI-помощника пока раздельные. После изменения условий тура обновите также данные помощника.</p>
+    <button id="newTour" class="primary">Добавить тур</button>
+    <div id="tourMsg" role="status" aria-live="polite"></div><div id="tourList"></div>
+    <form id="tourForm" class="card" hidden style="margin-top:18px">
+      <h2>Редактор тура</h2><input id="tourId" type="hidden">
+      <label for="tourStatus">Статус</label><select id="tourStatus"><option value="draft">Черновик</option><option value="published">Опубликован</option><option value="hidden">Скрыт</option></select>
+      <label for="tourPrice">Цена от (пусто — по запросу)</label><input id="tourPrice" type="number" min="0" step="0.01">
+      <label for="tourCurrency">Валюта</label><select id="tourCurrency"><option>USD</option><option>EUR</option><option>AMD</option></select>
+      <label for="tourOrder">Порядок</label><input id="tourOrder" type="number" min="0" value="0" required>
+      <label for="tourImage">Адрес обложки (HTTPS или имя файла сайта)</label><input id="tourImage" maxlength="2000">
+      <label for="tourUpload">Загрузить обложку (JPEG, PNG, WebP; до 5 МБ)</label><input id="tourUpload" type="file" accept="image/jpeg,image/png,image/webp">
+      <div id="tourTranslations"></div>
+      <div class="actions"><button type="submit" id="saveTour" class="primary">Сохранить</button><button type="button" id="cancelTour" class="ghost">Закрыть</button></div>
+    </form>
   </div>
   <div id="reviewsView">
   <div class="tabs" role="tablist" aria-label="Статус отзывов">
@@ -171,7 +189,7 @@ async function enterPanel() {
     say('loginMsg', 'У этого пользователя нет прав администратора. Проверьте, что его добавили в таблицу admins (шаг 4 в README.md).', 'err');
     return;
   }
-  show('panel'); await load();
+  show('panel'); setMode('tours'); await load();
 }
 
 async function load() {
@@ -324,6 +342,8 @@ async function removeLead(x, b) {
 function setMode(m) {
   mode = m;
   document.querySelectorAll('.mode').forEach(t => t.setAttribute('aria-selected', String(t.dataset.mode === m)));
+  $('toursView').hidden = m !== 'tours';
+  if (m === 'tours') loadTours();
   $('reviewsView').hidden = m !== 'reviews'; $('leadsView').hidden = m !== 'leads';
   if (m === 'leads') renderLeads();
 }
@@ -365,5 +385,6 @@ document.querySelectorAll('[data-status]').forEach(t => t.addEventListener('clic
   if (session) { await enterPanel(); } else { show('login'); }
 })();
 </script>
+<script src="admin-cms.js"></script>
 </body>
 </html>
