@@ -1,5 +1,5 @@
 /* AI travel assistant: talks to the Supabase Edge Function "chat". Hidden until the database is connected (config.js). */
-(function(){const CHAT_URL=CFG.chatUrl||(CFG.url?CFG.url+'/functions/v1/chat':'');const DEMO=!!(CFG.demo&&window.DEMO_REPLY);if(!DEMO&&(!CHAT_URL||!CFG.anonKey))return;
+(function(){const CHAT_URL=CFG.chatUrl||(CFG.url?CFG.url+'/functions/v1/chat':'');const DEMO=!!(CFG.demo&&window.DEMO_REPLY);if(!DEMO&&(CFG.chatEnabled===false||!CHAT_URL||!CFG.anonKey))return;
 const box=document.getElementById('chat'),fab=document.getElementById('chatFab'),panel=document.getElementById('chatPanel'),log=document.getElementById('chatLog'),form=document.getElementById('chatForm'),input=document.getElementById('chatInput'),chips=document.getElementById('chatChips'),sendBtn=document.getElementById('chatSend'),langSel=document.getElementById('lang');
 box.hidden=false;
 let history=[],busy=false,hello=null,session='';

@@ -29,7 +29,7 @@ new MutationObserver(renderCmsCatalogue).observe(document.documentElement,{attri
 (async()=>{
   const cfg=window.SUPABASE_CONFIG||{}; if(!cfg.url||!cfg.anonKey||cfg.demo)return;
   try {
-    const r=await fetch(cfg.url+'/rest/v1/site_tours?status=eq.published&select=translations,image_url,price,currency,sort_order&order=sort_order.asc,created_at.asc',{headers:{apikey:cfg.anonKey,Authorization:'Bearer '+cfg.anonKey}});
+    const r=await fetch(cfg.url+'/rest/v1/site_tours?status=eq.published&select=translations,image_url,price,currency,sort_order&order=sort_order.asc,created_at.asc',{headers:{apikey:cfg.anonKey}});
     if(!r.ok)return;const data=await r.json();if(!Array.isArray(data))return;
     publishedCmsTours=data;renderCmsCatalogue();
   }catch(e){document.querySelector('#tours .cards').innerHTML=originalCmsCards;}

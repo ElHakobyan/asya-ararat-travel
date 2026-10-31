@@ -1,12 +1,7 @@
-// Connection to the reviews database (Supabase). See README.md for the setup steps.
-// Fill in both values from Supabase -> Project Settings -> API:
-//   url     = "Project URL"          (looks like https://abcdxyz.supabase.co)
-//   anonKey = "anon public" key      (this key is meant to be public)
-// NEVER put the "service_role" key or any password here.
-// While these are empty the site works as before: reviews are sent via WhatsApp / Viber / Telegram.
+// Public browser connection. Never add service_role, secret keys or passwords here.
 window.SUPABASE_CONFIG = {
-  url: "",
-  anonKey: ""
+  url: "https://uueqajkwcfbrbzighnwp.supabase.co",
+  anonKey: "sb_publishable_9m7qXsQAVe3dl8UAYa1eYQ_tKFmesNB",
+  chatEnabled: false
 };
-// Optional: window.SUPABASE_CONFIG.chatUrl overrides the AI assistant endpoint
-// (default: <url>/functions/v1/chat). The chat button appears once url and anonKey are filled in.
+// Enable the AI chat only after its server function has been deployed.
