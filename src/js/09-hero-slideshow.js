@@ -8,6 +8,8 @@
   const ready = loaded.filter(Boolean);
   if (!ready.length) return;
   slides.forEach(slide => slide.classList.remove('is-active'));
+  const transitionMs = 4000;
+  const holdMs = 7000;
   let current = 0;
   ready[current].classList.add('is-active');
   if (ready.length < 2) return;
@@ -22,6 +24,6 @@
     setTimeout(() => {
       outgoing.classList.remove('is-active', 'is-previous');
       incoming.classList.remove('is-entering');
-    }, 4200);
-  }, 11000);
+    }, transitionMs);
+  }, holdMs + transitionMs);
 })();
