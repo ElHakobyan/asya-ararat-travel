@@ -82,6 +82,26 @@ nav a{white-space:nowrap}.actions .btn{white-space:nowrap}
 
 /* Compact company tagline below the destination title. */
 .hero h2[data-i="headline"]{font-family:Arial,Helvetica,sans-serif;font-size:clamp(20px,2vw,28px);line-height:1.45;letter-spacing:0;font-weight:500;max-width:560px}
+
+/* Align the main brand line with desktop navigation. */
+body>header .bar{width:min(1720px,94%);gap:22px}
+body>header .brand{flex-shrink:0}
+body>header .brandname{position:relative;display:block;font-size:27px;line-height:1.2}
+body>header .brandname small{position:absolute;top:100%;left:0;right:0;margin-top:3px}
+#nav{gap:clamp(14px,1.4vw,26px);font-size:16px;flex-shrink:0}
+#nav a:not(.nav-cta){display:inline-flex;align-items:center;line-height:1.2;padding:12px 0;transition:color .2s ease,transform .2s ease}
+#nav a:not(.nav-cta):after{content:"";position:absolute;left:0;right:0;bottom:3px;height:2px;background:var(--red);border-radius:2px;transform:scaleX(0);transition:transform .2s ease}
+#nav a.active:after,#nav a:not(.nav-cta):hover:after,#nav a:not(.nav-cta):focus-visible:after{transform:scaleX(1)}
+#nav a:not(.nav-cta):hover{color:var(--red);transform:translateY(-1px)}
+@media(min-width:1101px) and (max-width:1500px){body>header .actions>.btn{display:none}body>header .brandname{font-size:25px}}
+@media(max-width:1100px){
+body>header .menu{display:block}
+body>header .actions>.btn{display:none}
+#nav{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:flex-start;padding:24px 5%;background:#fff;box-shadow:0 12px 18px #102a4822;gap:12px}
+#nav.open{display:flex}
+#nav .nav-cta{display:inline-flex;margin-top:6px;color:#fff;padding:14px 24px}
+}
+@media(max-width:560px){body>header .brandname{font-size:20px}body>header .bar{gap:10px}}
 </style></head><body>
 <header><div class="wrap bar"><a class="brand" href="#home" aria-label="Asya Ararat Travel"><img class="mark" width="380" height="198" src="logo-emblem.png" onerror="this.onerror=null;this.src='logo.svg'" alt="Asya Ararat Travel emblem"><span class="brandname">ASYA <em>ARARAT</em><small>TRAVEL</small></span></a><nav id="nav"><a href="#home" class="active" data-i="home">Home</a><a href="#tours" data-i="tours">Japan Tours</a><a href="#about" data-i="about">About Us</a><a href="#gallery" data-i="gallery">Gallery</a><a href="#reviews" data-i="reviews">Reviews</a><a href="#visa" data-i="visa">Visa</a><a href="#contact" data-i="contact">Contact</a><a class="btn chev nav-cta" href="#contact" data-i="plan">Plan Your Trip</a></nav><div class="actions"><a class="btn chev" href="#contact" data-i="plan">Plan Your Trip</a><div class="langmenu" id="langmenu"><button type="button" class="lang" id="langBtn" aria-haspopup="listbox" aria-expanded="false" aria-controls="langList" aria-label="Language"><span id="langLabel">ՀԱՅ</span><span class="caret" aria-hidden="true"></span></button><ul class="langlist" id="langList" role="listbox" aria-label="Language" hidden><li role="option" tabindex="-1" data-lang="en" aria-selected="false"><b>EN</b> English</li><li role="option" tabindex="-1" data-lang="hy" aria-selected="true"><b>ՀԱՅ</b> Հայերեն</li><li role="option" tabindex="-1" data-lang="ru" aria-selected="false"><b>RU</b> Русский</li></ul><select id="lang" hidden aria-hidden="true" tabindex="-1"><option value="en">EN</option><option value="hy" selected>Հայ</option><option value="ru">RU</option></select></div><button class="menu" id="menu" aria-label="Menu" aria-expanded="false">☰</button></div></div></header>
 <main><section id="home" class="hero"><div class="wrap hero-inner"><div class="eyebrow" data-i="eyebrow">Discover • Explore • Experience</div><div class="titlerow"><h1 data-i="japan">Ճապոնիա</h1><svg class="brush" viewBox="0 0 80 10" aria-hidden="true"><path d="M0 6C18 1 52 1 80 4 54 5 24 8 0 6z" fill="#c9262e"/></svg></div><h2 data-i="headline">Ասյա-Արարատ Թրեվլ՝ Ճապոնիայի ձեր ուղեկիցը շուրջ 25 տարի։</h2><p data-i="intro">Discover unique tours to Japan with Asya Ararat Travel. Culture, nature, modern cities and unforgettable experiences.</p><div class="cta"><a class="btn chev" href="#tours" data-i="explore">Explore Japan Tours</a><a class="watch" href="#gallery"><span class="play" aria-hidden="true"></span><span data-i="watch">Watch Video</span></a></div></div><div class="kanji" aria-hidden="true"><span>日<br>本</span><b>⛩</b></div></section>
