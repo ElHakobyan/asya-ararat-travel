@@ -3,7 +3,6 @@
   const slides = Array.from(document.querySelectorAll('.hero-slide'));
   const controls = document.querySelector('.hero-playback');
   const counter = document.querySelector('.hero-count');
-  const progress = document.querySelector('.hero-progress');
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const loaded = await Promise.all(slides.map(async slide => {
     try { await slide.decode(); return slide; } catch { return null; }
@@ -21,17 +20,12 @@
   }
   function schedule(){
     clearTimeout(timer);
-    progress.classList.remove('is-running');
     if (document.hidden || motion.matches || transitioning) return;
-    // Restart the indicator for a full, equal hold after each completed dissolve.
-    void progress.offsetWidth;
-    progress.classList.add('is-running');
     timer = setTimeout(advance, holdMs);
   }
   function advance(){
     if (document.hidden || motion.matches) return schedule();
     transitioning = true;
-    progress.classList.remove('is-running');
     const outgoing = ready[current];
     current = (current + 1) % ready.length;
     const incoming = ready[current];
@@ -39,12 +33,15 @@
     incoming.classList.add('is-entering');
     incoming.classList.add('is-active');
     updateCounter();
-    setTimeout(() => {
+    const dissolve = incoming.animate([{opacity:0},{opacity:1}], {
+      duration:transitionMs, easing:'cubic-bezier(.45,0,.55,1)'
+    });
+    dissolve.finished.then(() => {
       outgoing.classList.remove('is-active', 'is-previous');
       incoming.classList.remove('is-entering');
       transitioning = false;
       schedule();
-    }, transitionMs);
+    });
   }
   document.addEventListener('visibilitychange', schedule);
   motion.addEventListener('change', schedule);
