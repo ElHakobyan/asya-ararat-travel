@@ -264,7 +264,7 @@ new MutationObserver(renderCmsCatalogue).observe(document.documentElement,{attri
     const dot = document.createElement('button');
     dot.type = 'button'; dot.className = 'hero-dot';
     dot.addEventListener('click', () => {
-      if (animation) animation.finish();
+      if (animation) { animation.onfinish = null; animation.cancel(); animation = null; }
       clearTimeout(timer);
       ready.forEach(s => s.classList.remove('is-active', 'is-previous', 'is-entering'));
       current = i;
