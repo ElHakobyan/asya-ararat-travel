@@ -1,8 +1,11 @@
-/* Keep original uploaded photos; crop only the displayed frame. */
+/* Originals remain untouched. Contain prevents excessive enlargement/cropping. */
 .hero{isolation:isolate;overflow:hidden;background:#fff9f6}
-.hero-slides{position:absolute;inset:0;z-index:-2;pointer-events:none}
-.hero-slide{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;opacity:0;transition:opacity 1.8s ease-in-out}
+.hero-slides{position:absolute;inset:0;z-index:-2;pointer-events:none;background:#fff9f6}
+.hero-slide{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:right center;opacity:0;z-index:0;transition:opacity 4s cubic-bezier(.45,0,.55,1)}
+.hero-slide-original{object-fit:cover;object-position:center}
 .hero-slide.is-active{opacity:1}
-.hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,rgba(255,249,246,.96) 0%,rgba(255,249,246,.86) 32%,rgba(255,249,246,.28) 66%,rgba(255,249,246,.03) 100%)}
-@media(max-width:560px){.hero::after{background:linear-gradient(90deg,rgba(255,249,246,.93),rgba(255,249,246,.73) 65%,rgba(255,249,246,.3))}.hero-slide{object-position:60% center}}
+.hero-slide.is-entering{z-index:2}
+.hero-slide.is-previous{z-index:1}
+.hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,#fff9f6 0%,rgba(255,249,246,.93) 27%,rgba(255,249,246,.5) 43%,transparent 63%)}
+@media(max-width:560px){.hero::after{background:linear-gradient(90deg,rgba(255,249,246,.94),rgba(255,249,246,.66) 65%,rgba(255,249,246,.12))}.hero-slide{object-position:center}}
 @media(prefers-reduced-motion:reduce){.hero-slide{transition:none}}

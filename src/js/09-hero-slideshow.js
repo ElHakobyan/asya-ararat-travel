@@ -1,9 +1,8 @@
-// Crossfade only after every original image has loaded, avoiding blank frames.
+// Hold the outgoing photo fully opaque beneath the four-second dissolve.
 (async function initHeroSlideshow(){
   const slides = Array.from(document.querySelectorAll('.hero-slide'));
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  if (slides.length < 2) return;
-  const loaded = await Promise.all(slides.map(async (slide) => {
+  const loaded = await Promise.all(slides.map(async slide => {
     try { await slide.decode(); return slide; } catch { return null; }
   }));
   const ready = loaded.filter(Boolean);
@@ -14,8 +13,15 @@
   if (ready.length < 2) return;
   setInterval(() => {
     if (document.hidden || motion.matches) return;
-    ready[current].classList.remove('is-active');
+    const outgoing = ready[current];
     current = (current + 1) % ready.length;
-    ready[current].classList.add('is-active');
-  }, 6000);
+    const incoming = ready[current];
+    outgoing.classList.add('is-previous');
+    incoming.classList.add('is-entering');
+    incoming.classList.add('is-active');
+    setTimeout(() => {
+      outgoing.classList.remove('is-active', 'is-previous');
+      incoming.classList.remove('is-entering');
+    }, 4200);
+  }, 11000);
 })();
