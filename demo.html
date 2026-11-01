@@ -79,16 +79,18 @@ nav a{white-space:nowrap}.actions .btn{white-space:nowrap}
 .chat-note{margin:0;padding:0 14px 10px;background:#fff9f6;color:#617080;font-size:11px;text-align:center}
 @media(max-width:560px){.chat{right:14px;bottom:88px}.chat-fab-label{display:none}.chat-fab{padding:15px}.chat-panel{position:fixed;right:8px;left:8px;bottom:8px;width:auto;height:calc(100vh - 80px)}}
 @media(prefers-reduced-motion:reduce){.chat-fab{transition:none}}
-/* Originals remain untouched. Contain prevents excessive enlargement/cropping. */
-.hero{isolation:isolate;overflow:hidden;background:#fff9f6}
-.hero-slides{position:absolute;inset:0;z-index:-2;pointer-events:none;background:#fff9f6}
-.hero-slide{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:right center;opacity:0;z-index:0;transition:opacity 4s cubic-bezier(.45,0,.55,1)}
-.hero-slide-original{object-fit:cover;object-position:center}
+/* Separate text and photos so no overlay washes out image detail. */
+.hero{isolation:isolate;overflow:hidden;position:relative;background:#fff9f6;min-height:570px}
+.hero .hero-inner{width:43%;margin-left:7%;margin-right:auto;padding:52px 0;z-index:1}
+.hero-slides{position:absolute;left:53%;right:3%;top:24px;bottom:24px;pointer-events:none}
+.hero-slide{position:absolute;inset:0;width:100%;height:100%;object-fit:scale-down;object-position:center;opacity:0;z-index:0;transition:opacity 4s cubic-bezier(.45,0,.55,1)}
 .hero-slide.is-active{opacity:1}
 .hero-slide.is-entering{z-index:2}
 .hero-slide.is-previous{z-index:1}
-.hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,#fff9f6 0%,rgba(255,249,246,.93) 27%,rgba(255,249,246,.5) 43%,transparent 63%)}
-@media(max-width:560px){.hero::after{background:linear-gradient(90deg,rgba(255,249,246,.94),rgba(255,249,246,.66) 65%,rgba(255,249,246,.12))}.hero-slide{object-position:center}}
+.hero::after{content:none}
+.hero .kanji{display:none}
+@media(max-width:830px){.hero{display:flex;flex-direction:column;align-items:stretch}.hero .hero-inner{order:0;width:86%;margin:0 auto;padding:38px 0 20px}.hero-slides{order:1;position:relative;inset:auto;width:94%;height:380px;margin:0 auto 24px;flex:none}.hero h1{font-size:clamp(64px,10vw,100px)}}
+@media(max-width:560px){.hero-slides{height:330px}.hero .hero-inner{width:90%}}
 @media(prefers-reduced-motion:reduce){.hero-slide{transition:none}}
 </style></head><body><div style="background:#102a48;color:#fff;font:600 13px Arial,sans-serif;text-align:center;padding:9px 12px">Демо / Demo: так работает AI-помощник. Ответы заготовлены, ничего не сохраняется. Чат: кнопка справа внизу.</div>
 <header><div class="wrap bar"><a class="brand" href="#home" aria-label="Asya Ararat Travel"><img class="mark" width="380" height="198" src="logo-emblem.png" onerror="this.onerror=null;this.src='logo.svg'" alt="Asya Ararat Travel emblem"><span class="brandname">ASYA <em>ARARAT</em><small>TRAVEL</small></span></a><nav id="nav"><a href="#home" class="active" data-i="home">Home</a><a href="#tours" data-i="tours">Japan Tours</a><a href="#about" data-i="about">About Us</a><a href="#gallery" data-i="gallery">Gallery</a><a href="#reviews" data-i="reviews">Reviews</a><a href="#visa" data-i="visa">Visa</a><a href="#contact" data-i="contact">Contact</a><a class="btn chev nav-cta" href="#contact" data-i="plan">Plan Your Trip</a></nav><div class="actions"><a class="btn chev" href="#contact" data-i="plan">Plan Your Trip</a><div class="langmenu" id="langmenu"><button type="button" class="lang" id="langBtn" aria-haspopup="listbox" aria-expanded="false" aria-controls="langList" aria-label="Language"><span id="langLabel">ՀԱՅ</span><span class="caret" aria-hidden="true"></span></button><ul class="langlist" id="langList" role="listbox" aria-label="Language" hidden><li role="option" tabindex="-1" data-lang="en" aria-selected="false"><b>EN</b> English</li><li role="option" tabindex="-1" data-lang="hy" aria-selected="true"><b>ՀԱՅ</b> Հայերեն</li><li role="option" tabindex="-1" data-lang="ru" aria-selected="false"><b>RU</b> Русский</li></ul><select id="lang" hidden aria-hidden="true" tabindex="-1"><option value="en">EN</option><option value="hy" selected>Հայ</option><option value="ru">RU</option></select></div><button class="menu" id="menu" aria-label="Menu" aria-expanded="false">☰</button></div></div></header>
