@@ -28,3 +28,6 @@
 @keyframes hero-progress{to{transform:scaleX(1)}}
 @media(max-width:830px){.hero-slides{bottom:auto;margin-bottom:12px}.hero-playback{position:relative;inset:auto;order:2;width:94%;margin:0 auto 24px}}
 @media(prefers-reduced-motion:reduce){.hero-progress.is-running i{animation:none}}
+
+/* Frame the detailed right side of the original panorama, not its pale left side. */
+.hero-slide-original{object-position:100% center}
