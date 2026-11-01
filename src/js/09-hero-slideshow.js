@@ -10,7 +10,7 @@
   const ready = loaded.filter(Boolean);
   if (!ready.length) return;
   slides.forEach(slide => slide.classList.remove('is-active'));
-  const transitionMs = 4000, holdMs = 7000;
+  const transitionMs = 3000, holdMs = 7000;
   let current = 0, timer, transitioning = false;
   ready[current].classList.add('is-active');
   if (ready.length < 2) return;
@@ -34,7 +34,7 @@
     incoming.classList.add('is-active');
     updateCounter();
     const dissolve = incoming.animate([{opacity:0},{opacity:1}], {
-      duration:transitionMs, easing:'cubic-bezier(.45,0,.55,1)'
+      duration:transitionMs, easing:'linear'
     });
     dissolve.finished.then(() => {
       outgoing.classList.remove('is-active', 'is-previous');
